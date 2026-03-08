@@ -10,25 +10,24 @@ from .normalize import normalize_matrix
 from .similarity import compute_distance_matrix, top_k_neighbors
 from .pca_analysis import compute_pca_2d
 from .stability import stability_jaccard
-from .stats import compute_input_stats   # <-- DODAJ IMPORT
+from .stats import compute_input_stats
 
 
 def run_pipeline():
     base_path = Path(__file__).resolve().parents[1]
 
+    csv_path = base_path / "data" / "raw" / "diabetic_data.csv"
     db_path = base_path / "data" / "processed" / "patients.db"
+
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    results_tables = base_path / "results" / "tables"   # <-- DODAJ
-    results_tables.mkdir(parents=True, exist_ok=True)   # <-- DODAJ
-
     # 1) Generowanie bazy
-    generate_database(db_path)
+    generate_database(csv_path, db_path)
 
     # 2) Wczytanie danych
     measurements = load_measurements(db_path)
 
-    # 3) Statystyki wejścia -> CSV
+    # 3) Statystyki wejścia
     input_stats = compute_input_stats(measurements)
     input_stats.to_csv(results_tables / "input_stats.csv", index=False)
 
@@ -44,7 +43,7 @@ def run_pipeline():
     # 7) Najbliżsi sąsiedzi
     neighbors = top_k_neighbors(D, k=config.TOP_K_NEIGHBORS)
 
-    # 8) PCA (na razie tylko liczymy; zapis CSV dodamy później, jeśli chcesz)
+    # 8) PCA
     coords = compute_pca_2d(X_norm)
 
     # 9) Stabilność: mean vs median
@@ -58,7 +57,7 @@ def run_pipeline():
 
     stability = stability_jaccard(neighbors, neighbors_median, sample_ids)
 
-    # 10) Zapis stabilności -> CSV
+    # 10) Zapis stabilności
     stability_df = pd.DataFrame([{
         "porownanie": "agregacja: mean vs median (zscore + euclidean)",
         "top_k": config.TOP_K_NEIGHBORS,

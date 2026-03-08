@@ -1,90 +1,114 @@
 import sqlite3
-import numpy as np
-from datetime import datetime, timedelta
-from . import config
+import pandas as pd
+from pathlib import Path
 
 
-def generate_database(db_path):
-    rng = np.random.default_rng(config.RANDOM_SEED)
+def generate_database(csv_path, db_path):
+    csv_path = Path(csv_path)
+    db_path = Path(db_path)
+
+    if not csv_path.exists():
+        raise FileNotFoundError(f"Nie znaleziono pliku CSV: {csv_path}")
+
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    df = pd.read_csv(csv_path)
 
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
+    # Usunięcie tabel, jeśli już istnieją
     cur.executescript("""
     DROP TABLE IF EXISTS patients;
-    DROP TABLE IF EXISTS visits;
-    DROP TABLE IF EXISTS measurements;
-
-    CREATE TABLE patients (
-        patient_id INTEGER PRIMARY KEY,
-        sex TEXT,
-        birth_year INTEGER
-    );
-
-    CREATE TABLE visits (
-        visit_id INTEGER PRIMARY KEY,
-        patient_id INTEGER,
-        visit_date TEXT
-    );
-
-    CREATE TABLE measurements (
-        measurement_id INTEGER PRIMARY KEY,
-        visit_id INTEGER,
-        patient_id INTEGER,
-        kind TEXT,
-        value REAL,
-        measured_at TEXT
-    );
+    DROP TABLE IF EXISTS encounters;
+    DROP TABLE IF EXISTS diagnoses;
+    DROP TABLE IF EXISTS labs;
+    DROP TABLE IF EXISTS medications;
+    DROP TABLE IF EXISTS outcomes;
     """)
 
-    visit_id = 1
-    measurement_id = 1
+    # Tabela patients
+    patients = df[
+        ["patient_nbr", "race", "gender", "age", "weight"]
+    ].drop_duplicates(subset=["patient_nbr"]).copy()
 
-    for pid in range(1, config.N_PATIENTS + 1):
-        sex = rng.choice(["M", "K"])
-        birth_year = rng.integers(1940, 2005)
+    patients.to_sql("patients", conn, index=False, if_exists="replace")
 
-        cur.execute(
-            "INSERT INTO patients VALUES (?, ?, ?)",
-            (pid, sex, birth_year),
-        )
+    # Tabela encounters
+    encounters = df[
+        [
+            "encounter_id",
+            "patient_nbr",
+            "admission_type_id",
+            "discharge_disposition_id",
+            "admission_source_id",
+            "time_in_hospital",
+            "payer_code",
+            "medical_specialty",
+            "num_lab_procedures",
+            "num_procedures",
+            "num_medications",
+            "number_outpatient",
+            "number_emergency",
+            "number_inpatient",
+            "number_diagnoses",
+        ]
+    ].copy()
 
-        n_visits = rng.integers(config.VISITS_MIN, config.VISITS_MAX)
+    encounters.to_sql("encounters", conn, index=False, if_exists="replace")
 
-        for i in range(n_visits):
-            visit_date = datetime.now() - timedelta(days=int(rng.integers(0, 365)))
+    # Tabela diagnoses
+    diagnoses = df[
+        ["encounter_id", "diag_1", "diag_2", "diag_3"]
+    ].copy()
 
-            cur.execute(
-                "INSERT INTO visits VALUES (?, ?, ?)",
-                (visit_id, pid, visit_date.date().isoformat()),
-            )
+    diagnoses.to_sql("diagnoses", conn, index=False, if_exists="replace")
 
-            values = {
-                "BP_SYS": rng.normal(125, 15),
-                "BP_DIA": rng.normal(80, 10),
-                "HR": rng.normal(75, 12),
-                "TEMP": rng.normal(36.8, 0.3),
-                "BMI": rng.normal(27, 4),
-            }
+    # Tabela labs
+    labs = df[
+        ["encounter_id", "max_glu_serum", "A1Cresult"]
+    ].copy()
 
-            for kind in config.KINDS:
-                if rng.random() < config.MISSING_RATE:
-                    continue
+    labs.to_sql("labs", conn, index=False, if_exists="replace")
 
-                cur.execute(
-                    "INSERT INTO measurements VALUES (?, ?, ?, ?, ?, ?)",
-                    (
-                        measurement_id,
-                        visit_id,
-                        pid,
-                        kind,
-                        float(values[kind]),
-                        visit_date.isoformat(),
-                    ),
-                )
-                measurement_id += 1
+    # Tabela medications
+    medications = df[
+        [
+            "encounter_id",
+            "metformin",
+            "repaglinide",
+            "nateglinide",
+            "chlorpropamide",
+            "glimepiride",
+            "acetohexamide",
+            "glipizide",
+            "glyburide",
+            "tolbutamide",
+            "pioglitazone",
+            "rosiglitazone",
+            "acarbose",
+            "miglitol",
+            "troglitazone",
+            "tolazamide",
+            "examide",
+            "citoglipton",
+            "insulin",
+            "glyburide-metformin",
+            "glipizide-metformin",
+            "glimepiride-pioglitazone",
+            "metformin-rosiglitazone",
+            "metformin-pioglitazone",
+        ]
+    ].copy()
 
-            visit_id += 1
+    medications.to_sql("medications", conn, index=False, if_exists="replace")
+
+    # Tabela outcomes
+    outcomes = df[
+        ["encounter_id", "change", "diabetesMed", "readmitted"]
+    ].copy()
+
+    outcomes.to_sql("outcomes", conn, index=False, if_exists="replace")
 
     conn.commit()
     conn.close()
