@@ -1,6 +1,6 @@
+from pathlib import Path
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
 from . import config
 from .generate_db import generate_database
@@ -10,61 +10,68 @@ from .normalize import normalize_matrix
 from .similarity import compute_distance_matrix, top_k_neighbors
 from .pca_analysis import compute_pca_2d
 from .stability import stability_jaccard
-from .stats import compute_input_stats
 
 
 def run_pipeline():
     base_path = Path(__file__).resolve().parents[1]
 
-    csv_path = base_path / "data" / "raw" / "diabetic_data.csv"
+    csv_path = base_path / "data" / "diabetic_data.csv"
     db_path = base_path / "data" / "processed" / "patients.db"
+    results_tables = base_path / "results" / "tables"
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
+    results_tables.mkdir(parents=True, exist_ok=True)
 
-    # 1) Generowanie bazy
+    # 1. Import CSV -> SQLite
     generate_database(csv_path, db_path)
 
-    # 2) Wczytanie danych
+    # 2. Wczytanie danych po joinach
     measurements = load_measurements(db_path)
 
-    # 3) Statystyki wejścia
-    input_stats = compute_input_stats(measurements)
-    input_stats.to_csv(results_tables / "input_stats.csv", index=False)
+    # Próbka robocza ze względu na rozmiar danych
+    sample_size = min(5000, len(measurements))
+    measurements = measurements.sample(n=sample_size, random_state=config.RANDOM_SEED)
 
-    # 4) Budowa macierzy cech
-    X = build_feature_matrix(measurements, aggregation="mean")
+    # 3. Budowa macierzy cech
+    X = build_feature_matrix(measurements)
 
-    # 5) Normalizacja
+    # zapis macierzy cech
+    X.to_csv(results_tables / "feature_matrix.csv")
+
+    # 4. Normalizacja
     X_norm = normalize_matrix(X, method="zscore")
 
-    # 6) Macierz odległości
+    # 5. Macierz odległości
     D = compute_distance_matrix(X_norm, metric="euclidean")
 
-    # 7) Najbliżsi sąsiedzi
+    # 6. Sąsiedzi
     neighbors = top_k_neighbors(D, k=config.TOP_K_NEIGHBORS)
 
-    # 8) PCA
+    # 7. PCA
     coords = compute_pca_2d(X_norm)
+    coords_out = coords.reset_index().rename(columns={"index": "encounter_id"})
+    coords_out.to_csv(results_tables / "pca_coords.csv", index=False)
 
-    # 9) Stabilność: mean vs median
-    X_median = build_feature_matrix(measurements, aggregation="median")
-    X_median = normalize_matrix(X_median, method="zscore")
-    D_median = compute_distance_matrix(X_median, metric="euclidean")
-    neighbors_median = top_k_neighbors(D_median, k=config.TOP_K_NEIGHBORS)
+    # 8. Stabilność: zscore vs minmax
+    X_minmax = normalize_matrix(X, method="minmax")
+    D_minmax = compute_distance_matrix(X_minmax, metric="euclidean")
+    neighbors_minmax = top_k_neighbors(D_minmax, k=config.TOP_K_NEIGHBORS)
 
     rng = np.random.default_rng(config.RANDOM_SEED)
-    sample_ids = rng.choice(list(neighbors.keys()), size=20, replace=False)
+    sample_size = min(100, len(neighbors))
+    sample_ids = rng.choice(list(neighbors.keys()), size=sample_size, replace=False)
 
-    stability = stability_jaccard(neighbors, neighbors_median, sample_ids)
+    stability = stability_jaccard(neighbors, neighbors_minmax, sample_ids)
 
-    # 10) Zapis stabilności
     stability_df = pd.DataFrame([{
-        "porownanie": "agregacja: mean vs median (zscore + euclidean)",
+        "porownanie": "normalizacja: zscore vs minmax (euclidean)",
         "top_k": config.TOP_K_NEIGHBORS,
         "n_query": len(sample_ids),
         "jaccard_mean": stability
     }])
     stability_df.to_csv(results_tables / "stability_jaccard.csv", index=False)
 
+    print("Liczba hospitalizacji:", len(X))
+    print("Liczba cech:", X.shape[1])
     print("Średnia stabilność (Jaccard):", stability)
     print("Pipeline zakończony poprawnie.")
