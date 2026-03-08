@@ -3,7 +3,7 @@ import numpy as np
 
 
 def normalize_matrix(X, method="minmax"):
-    X = X.copy()
+    X = X.copy().astype(float)
 
     if method == "minmax":
         mins = X.min()
