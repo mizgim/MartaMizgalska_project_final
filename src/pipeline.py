@@ -49,14 +49,19 @@ def run_pipeline():
 
     # 7. PCA
     coords = compute_pca_2d(X_norm)
+
     coords_out = coords.reset_index().rename(columns={"index": "encounter_id"})
+    coords_out["readmitted"] = measurements.set_index("encounter_id").loc[
+        coords_out["encounter_id"], "readmitted"
+    ].values
+
     coords_out.to_csv(results_tables / "pca_coords.csv", index=False)
 
     results_plots = base_path / "results" / "plots"
     results_plots.mkdir(parents=True, exist_ok=True)
 
     plot_pca(
-        coords,
+        coords_out,
         results_plots / "pca_plot.png",
         title="PCA hospitalizacji diabetologicznych"
     )
