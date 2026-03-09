@@ -10,7 +10,7 @@ from .normalize import normalize_matrix
 from .similarity import compute_distance_matrix, top_k_neighbors
 from .pca_analysis import compute_pca_2d
 from .stability import stability_jaccard
-
+from .plots import plot_pca
 
 def run_pipeline():
     base_path = Path(__file__).resolve().parents[1]
@@ -51,6 +51,15 @@ def run_pipeline():
     coords = compute_pca_2d(X_norm)
     coords_out = coords.reset_index().rename(columns={"index": "encounter_id"})
     coords_out.to_csv(results_tables / "pca_coords.csv", index=False)
+
+    results_plots = base_path / "results" / "plots"
+    results_plots.mkdir(parents=True, exist_ok=True)
+
+    plot_pca(
+        coords,
+        results_plots / "pca_plot.png",
+        title="PCA hospitalizacji diabetologicznych"
+    )
 
     # 8. Stabilność: zscore vs minmax
     X_minmax = normalize_matrix(X, method="minmax")
