@@ -11,6 +11,7 @@ from .similarity import compute_distance_matrix, top_k_neighbors
 from .pca_analysis import compute_pca_2d
 from .stability import stability_jaccard
 from .plots import plot_pca
+from .plots import plot_pca, plot_pca_insulin
 
 def run_pipeline():
     base_path = Path(__file__).resolve().parents[1]
@@ -55,6 +56,10 @@ def run_pipeline():
         coords_out["encounter_id"], "readmitted"
     ].values
 
+    coords_out["insulin"] = measurements.set_index("encounter_id").loc[
+        coords_out["encounter_id"], "insulin"
+    ].values
+
     coords_out.to_csv(results_tables / "pca_coords.csv", index=False)
 
     results_plots = base_path / "results" / "plots"
@@ -64,6 +69,12 @@ def run_pipeline():
         coords_out,
         results_plots / "pca_plot.png",
         title="PCA hospitalizacji diabetologicznych"
+    )
+
+    plot_pca_insulin(
+        coords_out,
+        results_plots / "pca_insulin.png",
+        title="PCA hospitalizacji (kolor: insulin)"
     )
 
     # 8. Stabilność: zscore vs minmax
