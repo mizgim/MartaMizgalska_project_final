@@ -20,6 +20,7 @@ def run_pipeline():
     csv_path = base_path / "data" / "diabetic_data.csv"
     db_path = base_path / "data" / "processed" / "patients.db"
     results_tables = base_path / "results" / "tables"
+    results_plots = base_path / "results" / "plots"
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     results_tables.mkdir(parents=True, exist_ok=True)
