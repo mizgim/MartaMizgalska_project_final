@@ -4,6 +4,7 @@ import pandas as pd
 
 from . import config
 from .generate_db import generate_database
+from .stats import compute_input_stats
 from .load_data import load_measurements
 from .build_features import build_feature_matrix
 from .normalize import normalize_matrix
@@ -30,6 +31,8 @@ def run_pipeline():
 
     # 2. Wczytanie danych po joinach
     measurements = load_measurements(db_path)
+    input_stats = compute_input_stats(measurements)
+    input_stats.to_csv(results_tables / "input_stats.csv", index=False)
 
     # Próbka robocza ze względu na rozmiar danych
     sample_size = min(5000, len(measurements))
