@@ -12,6 +12,7 @@ from .pca_analysis import compute_pca_2d
 from .stability import stability_jaccard
 from .plots import plot_pca
 from .plots import plot_pca, plot_pca_insulin
+from .plots import plot_pca, plot_pca_insulin, plot_pca_loadings
 
 def run_pipeline():
     base_path = Path(__file__).resolve().parents[1]
@@ -49,7 +50,7 @@ def run_pipeline():
     neighbors = top_k_neighbors(D, k=config.TOP_K_NEIGHBORS)
 
     # 7. PCA
-    coords = compute_pca_2d(X_norm)
+    coords, loadings = compute_pca_2d(X_norm)
 
     coords_out = coords.reset_index().rename(columns={"index": "encounter_id"})
     coords_out["readmitted"] = measurements.set_index("encounter_id").loc[
@@ -61,6 +62,11 @@ def run_pipeline():
     ].values
 
     coords_out.to_csv(results_tables / "pca_coords.csv", index=False)
+    loadings.to_csv(results_tables / "pca_loadings.csv")
+    plot_pca_loadings(
+        loadings,
+        results_plots / "pca_loadings.png"
+    )
 
     results_plots = base_path / "results" / "plots"
     results_plots.mkdir(parents=True, exist_ok=True)

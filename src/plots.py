@@ -74,3 +74,29 @@ def plot_pca_insulin(coords: pd.DataFrame, out_path: Path, title: str = "PCA hos
     fig.tight_layout()
     fig.savefig(out_path, dpi=160)
     plt.close(fig)
+
+def plot_pca_loadings(loadings, out_path, top_n=10):
+
+    import numpy as np
+
+    importance = np.sqrt(loadings["PC1"]**2 + loadings["PC2"]**2)
+
+    top_features = importance.sort_values(ascending=False).head(top_n)
+
+    fig, ax = plt.subplots(figsize=(8,6))
+
+    ax.barh(
+        top_features.index[::-1],
+        top_features.values[::-1]
+    )
+
+    ax.set_title("Najważniejsze zmienne w PCA")
+    ax.set_xlabel("Wpływ na strukturę danych")
+
+    ax.grid(True, linestyle="--", alpha=0.4)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=160)
+
+    plt.close(fig)
