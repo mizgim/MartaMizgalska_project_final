@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from pathlib import Path
+from src.pipeline import run_pipeline
 
 BASE = Path(__file__).resolve().parent
 TABLES = BASE / "results" / "tables"
@@ -15,6 +16,10 @@ st.title("Analiza hospitalizacji diabetologicznych")
 st.caption(
     "Interaktywny dashboard projektu rocznego — analiza podobieństwa hospitalizacji pacjentów z cukrzycą"
 )
+if st.button("Uruchom pipeline"):
+    with st.spinner("Trwa uruchamianie pipeline..."):
+        run_pipeline()
+    st.success("Pipeline zakończony. Wyniki zostały odświeżone.")
 
 menu = st.sidebar.radio(
     "Wybierz sekcję",
