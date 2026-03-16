@@ -20,6 +20,8 @@ from .plots import (
     plot_medication_usage,
     plot_age_vs_medications,
 )
+from .additional_analysis import age_vs_insulin
+from .plots import plot_age_vs_insulin
 
 def run_pipeline():
     base_path = Path(__file__).resolve().parents[1]
@@ -31,6 +33,7 @@ def run_pipeline():
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     results_tables.mkdir(parents=True, exist_ok=True)
+
 
     # 1. Import CSV -> SQLite
     generate_database(csv_path, db_path)
@@ -58,6 +61,11 @@ def run_pipeline():
     plot_age_vs_medications(
         age_meds,
         results_plots / "age_vs_medications.png"
+    )
+    age_insulin = age_vs_insulin(measurements)
+    plot_age_vs_insulin(
+        age_insulin,
+        results_plots / "age_vs_insulin.png"
     )
 
     # Próbka robocza ze względu na rozmiar danych

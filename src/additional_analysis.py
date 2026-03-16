@@ -33,3 +33,21 @@ def age_vs_medications(measurements):
     result = result.sort_values("age_numeric")
 
     return result
+
+def age_vs_insulin(measurements):
+
+    df = measurements.copy()
+
+    df["age_numeric"] = df["age"].str.extract(r"(\d+)").astype(float)
+
+    df["insulin_used"] = df["insulin"].isin(["Steady", "Up", "Down"])
+
+    result = (
+        df.groupby("age_numeric")["insulin_used"]
+        .mean()
+        .reset_index()
+    )
+
+    result["insulin_percent"] = result["insulin_used"] * 100
+
+    return result

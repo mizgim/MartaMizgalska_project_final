@@ -150,3 +150,25 @@ def plot_age_vs_medications(df, out_path):
     fig.tight_layout()
     fig.savefig(out_path, dpi=160)
     plt.close(fig)
+
+def plot_age_vs_insulin(df, out_path):
+
+    fig, ax = plt.subplots(figsize=(8,6))
+
+    ax.plot(
+        df["age_numeric"],
+        df["insulin_percent"],
+        marker="o"
+    )
+
+    ax.set_title("Odsetek insulinoterapii vs wiek pacjenta")
+    ax.set_xlabel("Wiek")
+    ax.set_ylabel("Pacjenci leczeni insuliną (%)")
+
+    ax.grid(True, linestyle="--", alpha=0.4)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=160)
+
+    plt.close(fig)
