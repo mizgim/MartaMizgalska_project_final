@@ -1,114 +1,205 @@
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-from PIL import Image
 
 BASE = Path(__file__).resolve().parent
 TABLES = BASE / "results" / "tables"
 PLOTS = BASE / "results" / "plots"
 
-st.set_page_config(page_title="Analiza hospitalizacji diabetologicznych", layout="wide")
-
-st.title("Analiza hospitalizacji diabetologicznych")
-st.caption("Dashboard projektu rocznego – analiza podobieństwa hospitalizacji pacjentów z cukrzycą")
-
-menu = st.sidebar.radio(
-    "Wybierz widok",
-    [
-        "Przegląd danych",
-        "PCA",
-        "Leki w populacji",
-        "Wiek vs liczba leków",
-        "Wiek vs insulina",
-        "Stabilność",
-    ],
+st.set_page_config(
+    page_title="Analiza hospitalizacji diabetologicznych",
+    layout="wide"
 )
 
-if menu == "Przegląd danych":
+st.title("Analiza hospitalizacji diabetologicznych")
+st.caption(
+    "Interaktywny dashboard projektu rocznego — analiza podobieństwa hospitalizacji pacjentów z cukrzycą"
+)
+
+menu = st.sidebar.radio(
+    "Wybierz sekcję",
+    [
+        "Przegląd",
+        "PCA",
+        "Terapia i populacja",
+        "Stabilność",
+        "Dane wejściowe"
+    ]
+)
+
+feature_matrix_path = TABLES / "feature_matrix.csv"
+input_stats_path = TABLES / "input_stats.csv"
+stability_path = TABLES / "stability_jaccard.csv"
+loadings_path = TABLES / "pca_loadings.csv"
+
+if feature_matrix_path.exists():
+    feature_matrix = pd.read_csv(feature_matrix_path)
+else:
+    feature_matrix = None
+
+if input_stats_path.exists():
+    input_stats = pd.read_csv(input_stats_path)
+else:
+    input_stats = None
+
+if stability_path.exists():
+    stability_df = pd.read_csv(stability_path)
+else:
+    stability_df = None
+
+if menu == "Przegląd":
     st.subheader("Podstawowe informacje")
+
     col1, col2, col3 = st.columns(3)
 
-    feature_matrix = TABLES / "feature_matrix.csv"
-    input_stats = TABLES / "input_stats.csv"
-    stability = TABLES / "stability_jaccard.csv"
-
-    if feature_matrix.exists():
-        df = pd.read_csv(feature_matrix)
-        col1.metric("Liczba hospitalizacji", len(df))
-        col2.metric("Liczba cech", len(df.columns) - 1)
+    if feature_matrix is not None:
+        col1.metric("Liczba hospitalizacji", len(feature_matrix))
+        col2.metric("Liczba cech", len(feature_matrix.columns) - 1)
     else:
         col1.metric("Liczba hospitalizacji", "brak")
         col2.metric("Liczba cech", "brak")
 
-    if stability.exists():
-        s = pd.read_csv(stability)
-        col3.metric("Średnia stabilność", round(float(s["jaccard_mean"].iloc[0]), 3))
+    if stability_df is not None:
+        col3.metric(
+            "Średnia stabilność (Jaccard)",
+            round(float(stability_df["jaccard_mean"].iloc[0]), 3)
+        )
     else:
-        col3.metric("Średnia stabilność", "brak")
+        col3.metric("Średnia stabilność (Jaccard)", "brak")
 
-    if input_stats.exists():
-        st.subheader("Statystyki wejścia")
-        st.dataframe(pd.read_csv(input_stats), use_container_width=True)
+    st.markdown("---")
+    st.markdown(
+        """
+        ### Cel projektu
+        Projekt analizuje podobieństwo hospitalizacji pacjentów z cukrzycą na podstawie cech klinicznych
+        i farmakoterapii. Badana jest także stabilność struktury podobieństw przy różnych metodach
+        przetwarzania danych.
+        """
+    )
 
-elif menu == "PCA":
-    st.subheader("PCA hospitalizacji")
+if menu == "PCA":
+    st.subheader("Analiza PCA")
+
+    pca_coords_path = TABLES / "pca_coords.csv"
+    pca_plot = PLOTS / "pca_plot.png"
+    pca_insulin = PLOTS / "pca_insulin.png"
+    pca_loadings = PLOTS / "pca_loadings.png"
+
+    if pca_coords_path.exists():
+        pca_df = pd.read_csv(pca_coords_path)
+
+        st.markdown("### Filtry")
+
+        c1, c2 = st.columns(2)
+
+        with c1:
+            readmitted_filter = st.multiselect(
+                "Readmitted",
+                options=sorted(pca_df["readmitted"].dropna().unique().tolist()),
+                default=sorted(pca_df["readmitted"].dropna().unique().tolist())
+            )
+
+        with c2:
+            insulin_filter = st.multiselect(
+                "Insulin",
+                options=sorted(pca_df["insulin"].dropna().unique().tolist()),
+                default=sorted(pca_df["insulin"].dropna().unique().tolist())
+            )
+
+        filtered_df = pca_df[
+            pca_df["readmitted"].isin(readmitted_filter) &
+            pca_df["insulin"].isin(insulin_filter)
+        ]
+
+        st.markdown(f"**Liczba punktów po filtrowaniu:** {len(filtered_df)}")
+
+        st.markdown("### PCA filtrowane")
+        st.scatter_chart(
+            filtered_df.set_index("encounter_id")[["PC1", "PC2"]],
+            use_container_width=True
+        )
+
+    else:
+        st.warning("Brak pliku pca_coords.csv")
+
+    st.markdown("---")
+
     c1, c2 = st.columns(2)
-
-    p1 = PLOTS / "pca_plot.png"
-    p2 = PLOTS / "pca_insulin.png"
 
     with c1:
         st.markdown("**PCA pokolorowane readmission**")
-        if p1.exists():
-            st.image(str(p1), use_container_width=True)
+        if pca_plot.exists():
+            st.image(str(pca_plot), use_container_width=True)
         else:
-            st.warning("Brak wykresu pca_plot.png")
+            st.warning("Brak pliku pca_plot.png")
 
     with c2:
-        st.markdown("**PCA pokolorowane insuliną**")
-        if p2.exists():
-            st.image(str(p2), use_container_width=True)
+        st.markdown("**PCA pokolorowane insulinoterapią**")
+        if pca_insulin.exists():
+            st.image(str(pca_insulin), use_container_width=True)
         else:
-            st.warning("Brak wykresu pca_insulin.png")
+            st.warning("Brak pliku pca_insulin.png")
 
-elif menu == "Leki w populacji":
-    st.subheader("Najczęściej stosowane leki")
-    p = PLOTS / "medication_usage.png"
-    if p.exists():
-        st.image(str(p), use_container_width=True)
-    else:
-        st.warning("Brak wykresu medication_usage.png")
-
-elif menu == "Wiek vs liczba leków":
-    st.subheader("Średnia liczba leków a wiek")
-    p = PLOTS / "age_vs_medications.png"
-    if p.exists():
-        st.image(str(p), use_container_width=True)
-    else:
-        st.warning("Brak wykresu age_vs_medications.png")
-
-elif menu == "Wiek vs insulina":
-    st.subheader("Odsetek insulinoterapii a wiek")
-    p = PLOTS / "age_vs_insulin.png"
-    if p.exists():
-        st.image(str(p), use_container_width=True)
-    else:
-        st.warning("Brak wykresu age_vs_insulin.png")
-
-elif menu == "Stabilność":
-    st.subheader("Stabilność struktury podobieństw")
-    pca_loadings = TABLES / "pca_loadings.csv"
-    stability = TABLES / "stability_jaccard.csv"
-    p = PLOTS / "pca_loadings.png"
-
-    if stability.exists():
-        st.markdown("**Wynik Jaccarda**")
-        st.dataframe(pd.read_csv(stability), use_container_width=True)
-
-    if p.exists():
-        st.markdown("**Najważniejsze zmienne w PCA**")
-        st.image(str(p), use_container_width=True)
-
+    st.markdown("---")
+    st.markdown("**Najważniejsze zmienne w PCA**")
     if pca_loadings.exists():
+        st.image(str(pca_loadings), use_container_width=True)
+    else:
+        st.warning("Brak pliku pca_loadings.png")
+
+if menu == "Terapia i populacja":
+    st.subheader("Analizy populacyjne i farmakoterapeutyczne")
+
+    c1, c2 = st.columns(2)
+
+    med_plot = PLOTS / "medication_usage.png"
+    age_meds_plot = PLOTS / "age_vs_medications.png"
+    age_insulin_plot = PLOTS / "age_vs_insulin.png"
+
+    with c1:
+        st.markdown("**Najczęściej stosowane leki**")
+        if med_plot.exists():
+            st.image(str(med_plot), use_container_width=True)
+        else:
+            st.warning("Brak pliku medication_usage.png")
+
+    with c2:
+        st.markdown("**Średnia liczba leków a wiek**")
+        if age_meds_plot.exists():
+            st.image(str(age_meds_plot), use_container_width=True)
+        else:
+            st.warning("Brak pliku age_vs_medications.png")
+
+    st.markdown("---")
+    st.markdown("**Odsetek insulinoterapii a wiek**")
+    if age_insulin_plot.exists():
+        st.image(str(age_insulin_plot), use_container_width=True)
+    else:
+        st.warning("Brak pliku age_vs_insulin.png")
+
+    st.info(
+        "Ta sekcja pokazuje profil farmakoterapii oraz zależność intensywności leczenia od wieku pacjentów."
+    )
+
+if menu == "Stabilność":
+    st.subheader("Stabilność struktury podobieństw")
+
+    if stability_df is not None:
+        st.dataframe(stability_df, use_container_width=True)
+        st.success(
+            "Współczynnik Jaccarda pokazuje, jak bardzo zmienia się lokalna struktura sąsiedztwa po zmianie sposobu normalizacji danych."
+        )
+    else:
+        st.warning("Brak pliku stability_jaccard.csv")
+
+    if loadings_path.exists():
         with st.expander("Tabela PCA loadings"):
-            st.dataframe(pd.read_csv(pca_loadings), use_container_width=True)
+            st.dataframe(pd.read_csv(loadings_path), use_container_width=True)
+
+if menu == "Dane wejściowe":
+    st.subheader("Statystyki danych wejściowych")
+
+    if input_stats is not None:
+        st.dataframe(input_stats, use_container_width=True)
+    else:
+        st.warning("Brak pliku input_stats.csv")
