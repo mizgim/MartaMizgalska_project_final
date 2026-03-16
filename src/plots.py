@@ -100,3 +100,20 @@ def plot_pca_loadings(loadings, out_path, top_n=10):
     fig.savefig(out_path, dpi=160)
 
     plt.close(fig)
+
+def plot_medication_usage(df, out_path):
+
+    fig, ax = plt.subplots(figsize=(8,6))
+
+    ax.barh(df.index[::-1], df["count"][::-1])
+
+    ax.set_title("Najczęściej stosowane leki w hospitalizacjach")
+    ax.set_xlabel("Liczba hospitalizacji")
+
+    ax.grid(True, linestyle="--", alpha=0.4)
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=160)
+
+    plt.close(fig)
