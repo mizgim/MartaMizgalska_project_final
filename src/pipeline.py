@@ -14,6 +14,12 @@ from .stability import stability_jaccard
 from .plots import plot_pca
 from .plots import plot_pca, plot_pca_insulin
 from .plots import plot_pca, plot_pca_insulin, plot_pca_loadings
+from .additional_analysis import medication_usage, age_vs_medications
+from .additional_analysis import medication_usage, age_vs_medications
+from .plots import (
+    plot_medication_usage,
+    plot_age_vs_medications,
+)
 
 def run_pipeline():
     base_path = Path(__file__).resolve().parents[1]
@@ -33,6 +39,26 @@ def run_pipeline():
     measurements = load_measurements(db_path)
     input_stats = compute_input_stats(measurements)
     input_stats.to_csv(results_tables / "input_stats.csv", index=False)
+
+    # dodatkowe analizy
+    med_usage = medication_usage(measurements)
+    med_usage.to_csv(results_tables / "medication_usage.csv")
+
+    age_meds = age_vs_medications(measurements)
+    age_meds.to_csv(results_tables / "age_vs_medications.csv")
+
+    # dodatkowe wykresy
+    med_usage = medication_usage(measurements)
+    plot_medication_usage(
+        med_usage,
+        results_plots / "medication_usage.png"
+    )
+
+    age_meds = age_vs_medications(measurements)
+    plot_age_vs_medications(
+        age_meds,
+        results_plots / "age_vs_medications.png"
+    )
 
     # Próbka robocza ze względu na rozmiar danych
     sample_size = min(5000, len(measurements))
