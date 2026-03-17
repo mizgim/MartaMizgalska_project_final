@@ -35,6 +35,7 @@ def run_pipeline(sample_size=None):
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     results_tables.mkdir(parents=True, exist_ok=True)
+    results_plots.mkdir(parents=True, exist_ok=True)
 
 
     # 1. Import CSV -> SQLite
@@ -72,9 +73,6 @@ def run_pipeline(sample_size=None):
         results_plots / "age_vs_insulin.png"
     )
 
-    # Próbka robocza ze względu na rozmiar danych
-    sample_size = min(5000, len(measurements))
-    measurements = measurements.sample(n=sample_size, random_state=config.RANDOM_SEED)
 
     # 3. Budowa macierzy cech
     X = build_feature_matrix(measurements)
@@ -110,8 +108,6 @@ def run_pipeline(sample_size=None):
         results_plots / "pca_loadings.png"
     )
 
-    results_plots = base_path / "results" / "plots"
-    results_plots.mkdir(parents=True, exist_ok=True)
 
     plot_pca(
         coords_out,
