@@ -4,8 +4,8 @@ from pathlib import Path
 from src.pipeline import run_pipeline
 
 BASE = Path(__file__).resolve().parent
-TABLES = BASE / "results" / "tables"
-PLOTS = BASE / "results" / "plots"
+TABLES = BASE / "results" / dataset_type / "tables"
+PLOTS = BASE / "results" / dataset_type / "plots"
 
 st.set_page_config(
     page_title="Analiza hospitalizacji diabetologicznych",
@@ -16,6 +16,7 @@ st.title("Analiza hospitalizacji diabetologicznych")
 st.caption(
     "Interaktywny dashboard projektu rocznego — analiza podobieństwa hospitalizacji pacjentów z cukrzycą"
 )
+st.info(f"Aktualnie wybrany zbiór: {dataset_type}")
 if st.button("Uruchom pipeline"):
     with st.spinner("Trwa uruchamianie pipeline..."):
         run_pipeline()
@@ -31,7 +32,10 @@ menu = st.sidebar.radio(
         "Dane wejściowe"
     ]
 )
-
+dataset_type = st.sidebar.radio(
+    "Wybierz dane",
+    ["full", "sample"]
+)
 feature_matrix_path = TABLES / "feature_matrix.csv"
 input_stats_path = TABLES / "input_stats.csv"
 stability_path = TABLES / "stability_jaccard.csv"
