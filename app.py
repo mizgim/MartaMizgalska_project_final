@@ -29,7 +29,8 @@ menu = st.sidebar.radio(
         "PCA",
         "Terapia i populacja",
         "Stabilność",
-        "Dane wejściowe"
+        "Dane wejściowe",
+        "Wnioski"
     ]
 )
 dataset_type = st.sidebar.radio(
@@ -212,3 +213,68 @@ if menu == "Dane wejściowe":
         st.dataframe(input_stats, use_container_width=True)
     else:
         st.warning("Brak pliku input_stats.csv")
+
+if menu == "Wnioski":
+    st.subheader("Najważniejsze wnioski z analizy")
+
+    st.success(
+        "Projekt pokazuje, że podobieństwo hospitalizacji pacjentów z cukrzycą zależy zarówno od cech klinicznych, jak i od decyzji technicznych związanych z przetwarzaniem danych."
+    )
+
+    st.markdown(
+        """
+        ### 1. Struktura danych
+        Analiza PCA pokazuje, że hospitalizacje pacjentów z cukrzycą tworzą wyraźną strukturę
+        w przestrzeni cech klinicznych i farmakoterapeutycznych. Oznacza to, że przypadki nie są
+        rozłożone losowo, lecz grupują się według podobnych profili leczenia i hospitalizacji.
+        """
+    )
+
+    st.markdown(
+        """
+        ### 2. Najważniejsze cechy wpływające na podobieństwo
+        Największy wpływ na strukturę danych mają:
+        - liczba leków,
+        - długość hospitalizacji,
+        - liczba procedur laboratoryjnych,
+        - liczba diagnoz,
+        - cechy demograficzne pacjentów.
+        """
+    )
+
+    st.markdown(
+        """
+        ### 3. Znaczenie insulinoterapii
+        Kolorowanie PCA według insulinoterapii sugeruje, że intensywność leczenia insuliną
+        częściowo wpływa na pozycję hospitalizacji w przestrzeni podobieństw. Jednocześnie
+        nie obserwuje się całkowicie rozłącznych klastrów, co wskazuje na wieloczynnikowy
+        charakter danych klinicznych.
+        """
+    )
+
+    st.markdown(
+        """
+        ### 4. Wpływ wyboru metody przetwarzania
+        Analiza stabilności z użyciem współczynnika Jaccarda pokazuje, że zmiana sposobu
+        normalizacji danych wpływa na lokalną strukturę sąsiedztwa. Oznacza to, że decyzje
+        techniczne nie są neutralne i mogą zmieniać wynik analizy podobieństwa pacjentów.
+        """
+    )
+
+    st.markdown(
+        """
+        ### 5. Wnioski farmakoterapeutyczne
+        Dodatkowe analizy populacyjne pokazują:
+        - które leki są najczęściej stosowane,
+        - jak zmienia się liczba leków wraz z wiekiem,
+        - jak zmienia się odsetek insulinoterapii w różnych grupach wiekowych.
+        """
+    )
+
+    st.markdown(
+        """
+        ### 6. Porównanie próby i pełnego zbioru
+        Dashboard umożliwia porównanie wyników dla próby 5000 hospitalizacji oraz dla pełnego
+        zbioru danych, co pozwala ocenić, jak wielkość danych wpływa na stabilność i strukturę wyników.
+        """
+    )
