@@ -23,13 +23,15 @@ from .plots import (
 from .additional_analysis import age_vs_insulin
 from .plots import plot_age_vs_insulin
 
-def run_pipeline():
+def run_pipeline(sample_size=None):
     base_path = Path(__file__).resolve().parents[1]
 
     csv_path = base_path / "data" / "diabetic_data.csv"
     db_path = base_path / "data" / "processed" / "patients.db"
-    results_tables = base_path / "results" / "tables"
-    results_plots = base_path / "results" / "plots"
+    suffix = "sample" if sample_size else "full"
+
+    results_tables = Path(f"results/{suffix}/tables")
+    results_plots = Path(f"results/{suffix}/plots")
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     results_tables.mkdir(parents=True, exist_ok=True)
@@ -40,6 +42,8 @@ def run_pipeline():
 
     # 2. Wczytanie danych po joinach
     measurements = load_measurements(db_path)
+    if sample_size:
+        measurements = measurements.sample(n=sample_size, random_state=42)
     input_stats = compute_input_stats(measurements)
     input_stats.to_csv(results_tables / "input_stats.csv", index=False)
 
