@@ -8,7 +8,7 @@ from .stats import compute_input_stats
 from .load_data import load_measurements
 from .build_features import build_feature_matrix
 from .normalize import normalize_matrix
-from .similarity import compute_distance_matrix, top_k_neighbors
+from .similarity import compute_knn, knn_to_dataframe
 from .pca_analysis import compute_pca_2d
 from .stability import stability_jaccard
 from .plots import plot_pca
@@ -83,11 +83,16 @@ def run_pipeline(sample_size=None):
     # 4. Normalizacja
     X_norm = normalize_matrix(X, method="zscore")
 
-    # 5. Macierz odległości
-    D = compute_distance_matrix(X_norm, metric="euclidean")
+    # 5. k-nearest neighbors
+    distances, indices = compute_knn(
+        X_norm,
+        n_neighbors=config.TOP_K_NEIGHBORS,
+        algorithm="ball_tree",
+        metric="euclidean"
+    )
 
-    # 6. Sąsiedzi
-    neighbors = top_k_neighbors(D, k=config.TOP_K_NEIGHBORS)
+    neighbors_df = knn_to_dataframe(indices, X.index)
+    neighbors_df.to_csv(results_tables / "neighbors.csv", index=False)
 
     # 7. PCA
     coords, loadings = compute_pca_2d(X_norm)

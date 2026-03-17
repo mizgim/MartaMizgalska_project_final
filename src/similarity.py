@@ -1,17 +1,31 @@
+from sklearn.neighbors import NearestNeighbors
 import pandas as pd
-import numpy as np
-from scipy.spatial.distance import pdist, squareform
 
 
-def compute_distance_matrix(X, metric="euclidean"):
-    distances = squareform(pdist(X.values, metric=metric))
-    return pd.DataFrame(distances, index=X.index, columns=X.index)
+def compute_knn(X, n_neighbors=10, algorithm="ball_tree", metric="euclidean"):
+    model = NearestNeighbors(
+        n_neighbors=n_neighbors,
+        algorithm=algorithm,
+        metric=metric
+    )
+
+    model.fit(X)
+
+    distances, indices = model.kneighbors(X)
+
+    return distances, indices
 
 
-def top_k_neighbors(D, k=10):
-    neighbors = {}
-    for pid in D.index:
-        row = D.loc[pid].copy()
-        row.loc[pid] = np.inf
-        neighbors[pid] = row.nsmallest(k).index.tolist()
-    return neighbors
+def knn_to_dataframe(indices, X_index):
+    rows = []
+
+    for row_id, neighbors in enumerate(indices):
+        encounter_id = X_index[row_id]
+        neighbor_ids = [X_index[i] for i in neighbors]
+
+        rows.append({
+            "encounter_id": encounter_id,
+            "neighbors": neighbor_ids
+        })
+
+    return pd.DataFrame(rows)
