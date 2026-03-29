@@ -39,7 +39,8 @@ def run_pipeline(sample_size=None):
 
 
     # 1. Import CSV -> SQLite
-    generate_database(csv_path, db_path)
+    if not db_path.exists():
+        generate_database(csv_path, db_path)
 
     # 2. Wczytanie danych po joinach
     measurements = load_measurements(db_path)
@@ -126,26 +127,55 @@ def run_pipeline(sample_size=None):
         title="PCA hospitalizacji (kolor: insulin)"
     )
 
-    # 8. Stabilność: zscore vs minmax
-    X_minmax = normalize_matrix(X, method="minmax")
-    D_minmax = compute_distance_matrix(X_minmax, metric="euclidean")
-    neighbors_minmax = top_k_neighbors(D_minmax, k=config.TOP_K_NEIGHBORS)
+    # 8. Stabilność: liczymy tylko dla próbki
+    if sample_size:
+        X_minmax = normalize_matrix(X, method="minmax")
 
-    rng = np.random.default_rng(config.RANDOM_SEED)
-    sample_size = min(100, len(neighbors))
-    sample_ids = rng.choice(list(neighbors.keys()), size=sample_size, replace=False)
+        _, indices_minmax = compute_knn(
+            X_minmax,
+            n_neighbors=config.TOP_K_NEIGHBORS,
+            algorithm="ball_tree",
+            metric="euclidean"
+        )
 
-    stability = stability_jaccard(neighbors, neighbors_minmax, sample_ids)
+        neighbors_zscore = {
+            X.index[row_id]: [X.index[i] for i in neigh]
+            for row_id, neigh in enumerate(indices)
+        }
 
-    stability_df = pd.DataFrame([{
-        "porownanie": "normalizacja: zscore vs minmax (euclidean)",
-        "top_k": config.TOP_K_NEIGHBORS,
-        "n_query": len(sample_ids),
-        "jaccard_mean": stability
-    }])
+        neighbors_minmax = {
+            X.index[row_id]: [X.index[i] for i in neigh]
+            for row_id, neigh in enumerate(indices_minmax)
+        }
+
+        rng = np.random.default_rng(config.RANDOM_SEED)
+        query_n = min(100, len(neighbors_zscore))
+        query_ids = rng.choice(list(neighbors_zscore.keys()), size=query_n, replace=False)
+
+        stability = stability_jaccard(neighbors_zscore, neighbors_minmax, query_ids)
+
+        stability_df = pd.DataFrame([{
+            "porownanie": "normalizacja: zscore vs minmax (euclidean)",
+            "top_k": config.TOP_K_NEIGHBORS,
+            "n_query": len(query_ids),
+            "jaccard_mean": stability
+        }])
+    else:
+        stability_df = pd.DataFrame([{
+            "porownanie": "normalizacja: zscore vs minmax (euclidean)",
+            "top_k": config.TOP_K_NEIGHBORS,
+            "n_query": 0,
+            "jaccard_mean": None
+        }])
+
     stability_df.to_csv(results_tables / "stability_jaccard.csv", index=False)
 
     print("Liczba hospitalizacji:", len(X))
     print("Liczba cech:", X.shape[1])
-    print("Średnia stabilność (Jaccard):", stability)
+
+    if sample_size:
+        print("Średnia stabilność (Jaccard):", stability)
+    else:
+        print("Stabilność nie była liczona dla pełnego zbioru danych.")
+
     print("Pipeline zakończony poprawnie.")
