@@ -61,17 +61,7 @@ if st.button("Uruchom pipeline"):
     st.success("Pipeline zakończony. Wyniki zostały odświeżone.")
     st.rerun()
 
-menu = st.sidebar.radio(
-    "Wybierz sekcję",
-    [
-        "Przegląd",
-        "PCA",
-        "Terapia i populacja",
-        "Stabilność",
-        "Dane wejściowe",
-        "Wnioski"
-    ]
-)
+
 feature_matrix_path = TABLES / "feature_matrix.csv"
 input_stats_path = TABLES / "input_stats.csv"
 stability_path = TABLES / "stability_jaccard.csv"
