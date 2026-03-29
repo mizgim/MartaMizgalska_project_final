@@ -40,11 +40,23 @@ st.caption(
 st.info(f"Aktualnie wybrany zbiór: {dataset_type}")
 
 if st.button("Uruchom pipeline"):
-    with st.spinner("Trwa uruchamianie pipeline..."):
-        if dataset_type == "sample":
-            run_pipeline(sample_size=5000)
-        else:
-            run_pipeline(sample_size=None)
+    progress = st.progress(0, text="Inicjalizacja...")
+    status = st.empty()
+
+    def update_status(msg, pct):
+        progress.progress(pct, text=msg)
+        status.info(msg)
+
+    if dataset_type == "sample":
+        update_status("Wczytuję dane...", 10)
+        run_pipeline(sample_size=5000, status_callback=update_status)
+    else:
+        update_status("Wczytuję dane... (pełny zbiór – może potrwać kilka minut)", 10)
+        run_pipeline(sample_size=None, status_callback=update_status)
+
+    progress.progress(100, text="Gotowe!")
+    st.success("Pipeline zakończony.")
+    st.rerun()
 
     st.success("Pipeline zakończony. Wyniki zostały odświeżone.")
     st.rerun()
