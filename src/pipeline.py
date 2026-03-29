@@ -27,7 +27,13 @@ def run_pipeline(sample_size=None, status_callback=None):
     base_path = Path(__file__).resolve().parents[1]
     csv_path = base_path / "data" / "diabetic_data.csv"
     db_path = base_path / "data" / "processed" / "patients.db"
-    suffix = "sample" if sample_size else "full"
+
+    if sample_size is None:
+        suffix = "full"
+    elif sample_size <= 5000:
+        suffix = "sample"
+    else:
+        suffix = "medium"
 
     results_tables = Path(f"results/{suffix}/tables")
     results_plots = Path(f"results/{suffix}/plots")
@@ -72,7 +78,7 @@ def run_pipeline(sample_size=None, status_callback=None):
     update("Normalizuję dane...", 45)
     X_norm = normalize_matrix(X, method="zscore")
 
-    # 6. Redukcja wymiarów przed kNN (rekomendacja: PCA + kNN)
+    # 6. Redukcja wymiarów przed kNN
     update("Redukuję wymiary przed kNN (PCA 10 komponentów)...", 50)
     n_components = min(10, X_norm.shape[1])
     pca_pre = SklearnPCA(n_components=n_components, random_state=config.RANDOM_SEED)
@@ -111,11 +117,11 @@ def run_pipeline(sample_size=None, status_callback=None):
     plot_pca_insulin(coords_out, results_plots / "pca_insulin.png",
                      title="PCA hospitalizacji (kolor: insulin)")
 
-    # 9. Stabilność (Jaccard) - tylko dla próbki
+    # 9. Stabilność (Jaccard) - sample i medium, nie full
     update("Obliczam stabilność (Jaccard)...", 85)
-    if sample_size:
+    if sample_size is not None:
         X_minmax = normalize_matrix(X, method="minmax")
-        X_reduced_minmax = pca_pre.transform(X_minmax)  # ten sam PCA, inna normalizacja
+        X_reduced_minmax = pca_pre.transform(X_minmax)
 
         _, indices_minmax = compute_knn(
             X_reduced_minmax,
@@ -140,6 +146,7 @@ def run_pipeline(sample_size=None, status_callback=None):
             "jaccard_mean": stability
         }])
     else:
+        stability = None
         stability_df = pd.DataFrame([{
             "porownanie": "normalizacja: zscore vs minmax (PCA 10D + euclidean)",
             "top_k": config.TOP_K_NEIGHBORS,
@@ -154,7 +161,7 @@ def run_pipeline(sample_size=None, status_callback=None):
     print("Liczba cech:", X.shape[1])
     print(f"Przestrzeń kNN: PCA {n_components}D (z {X.shape[1]} cech)")
 
-    if sample_size:
+    if stability is not None:
         print("Średnia stabilność (Jaccard):", stability)
     else:
         print("Stabilność nie była liczona dla pełnego zbioru danych.")
