@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import base64
 from pathlib import Path
 from src.pipeline import run_pipeline
 
@@ -9,6 +10,33 @@ st.set_page_config(
 )
 
 BASE = Path(__file__).resolve().parent
+
+def get_base64_image(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+img_base64 = get_base64_image(BASE / "tabletkitlo1.png")
+
+st.markdown(f"""
+    <style>
+    [data-testid="stSidebar"] {{
+        background-image: url("data:image/png;base64,{img_base64}");
+        background-size: cover;
+        background-position: center;
+    }}
+    [data-testid="stSidebar"]::before {{
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255, 255, 255, 0.75);
+        z-index: 0;
+    }}
+    [data-testid="stSidebar"] > div:first-child {{
+        position: relative;
+        z-index: 1;
+    }}
+    </style>
+""", unsafe_allow_html=True)
 
 dataset_type = st.sidebar.radio(
     "Wybierz dane",
@@ -151,28 +179,6 @@ if menu == "PCA":
 
     else:
         st.warning("Brak pliku pca_coords.csv – uruchom pipeline.")
-
-    st.markdown("---")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("**PCA pokolorowane readmission**")
-        if pca_plot.exists():
-            st.image(str(pca_plot), use_container_width=True)
-        else:
-            st.warning("Brak pliku pca_plot.png")
-    with c2:
-        st.markdown("**PCA pokolorowane insulinoterapią**")
-        if pca_insulin.exists():
-            st.image(str(pca_insulin), use_container_width=True)
-        else:
-            st.warning("Brak pliku pca_insulin.png")
-
-    st.markdown("---")
-    st.markdown("**Najważniejsze zmienne w PCA**")
-    if pca_loadings.exists():
-        st.image(str(pca_loadings), use_container_width=True)
-    else:
-        st.warning("Brak pliku pca_loadings.png")
 
     st.markdown("---")
     c1, c2 = st.columns(2)
