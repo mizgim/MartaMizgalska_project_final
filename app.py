@@ -214,51 +214,56 @@ if menu == "Dane wejściowe":
     else:
         st.warning("Brak pliku input_stats.csv")
 
-if menu == "Wnioski":
+Oto gotowa sekcja Wnioski do wklejenia w app.py:
+pythonif menu == "Wnioski":
     st.subheader("Najważniejsze wnioski z analizy")
 
     st.success("Projekt pokazuje, że podobieństwo hospitalizacji pacjentów z cukrzycą zależy zarówno od cech klinicznych, jak i od decyzji technicznych związanych z przetwarzaniem danych.")
 
     st.markdown("""
     ### 1. Struktura danych
-    Analiza PCA pokazuje, że hospitalizacje pacjentów z cukrzycą tworzą wyraźną strukturę
-    w przestrzeni cech klinicznych i farmakoterapeutycznych.
+    Hospitalizacje tworzą jedno duże, eliptyczne skupisko w przestrzeni PCA bez wyraźnie
+    rozłącznych klastrów. Oznacza to, że przypadki różnią się od siebie stopniowo,
+    a nie skokowo – nie istnieją ostro oddzielone typy hospitalizacji diabetologicznych.
     """)
 
     st.markdown("""
     ### 2. Najważniejsze cechy wpływające na podobieństwo
-    Największy wpływ na strukturę danych mają:
-    - liczba leków,
-    - długość hospitalizacji,
-    - liczba procedur laboratoryjnych,
-    - liczba diagnoz,
-    - cechy demograficzne pacjentów.
+    Największy wpływ na strukturę danych mają liczba leków, długość hospitalizacji,
+    liczba procedur laboratoryjnych, liczba diagnoz oraz cechy demograficzne pacjentów.
     """)
 
     st.markdown("""
     ### 3. Znaczenie insulinoterapii
-    Kolorowanie PCA według insulinoterapii sugeruje, że intensywność leczenia insuliną
-    częściowo wpływa na pozycję hospitalizacji w przestrzeni podobieństw.
+    We wszystkich trzech zbiorach danych widoczny jest gradient insulinoterapii
+    w przestrzeni PCA – pacjenci bez insuliny (No) koncentrują się w lewej górnej
+    części wykresu, natomiast pacjenci z aktywną insulinoterapią (Steady, Up, Down)
+    przesuwają się ku prawej dolnej części. Gradient jest najbardziej wyraźny
+    w pełnym zbiorze 101 766 rekordów, co sugeruje że insulinoterapia jest
+    istotnym czynnikiem różnicującym profile hospitalizacji.
     """)
 
     st.markdown("""
     ### 4. Wpływ wyboru metody przetwarzania
-    Analiza stabilności z użyciem współczynnika Jaccarda pokazuje, że zmiana sposobu
-    normalizacji danych wpływa na lokalną strukturę sąsiedztwa.
+    Analiza stabilności wykazała, że wartość współczynnika Jaccarda wyniosła 0.385
+    dla próbki 5 000 rekordów oraz 0.312 dla 20 000 rekordów. Oznacza to, że wraz
+    ze wzrostem zbioru danych struktura sąsiedztwa staje się mniej stabilna przy
+    zmianie normalizacji z z-score na min-max – większy zbiór ujawnia większą
+    wrażliwość na wybór metody przetwarzania danych.
     """)
 
     st.markdown("""
     ### 5. Wnioski farmakoterapeutyczne
-    Dodatkowe analizy populacyjne pokazują:
-    - które leki są najczęściej stosowane,
-    - jak zmienia się liczba leków wraz z wiekiem,
-    - jak zmienia się odsetek insulinoterapii w różnych grupach wiekowych.
+    Dodatkowe analizy populacyjne pokazują które leki są najczęściej stosowane,
+    jak rośnie liczba leków wraz z wiekiem pacjenta oraz jak zmienia się odsetek
+    insulinoterapii w różnych grupach wiekowych.
     """)
 
     st.markdown("""
     ### 6. Porównanie trzech zbiorów danych
-    Dashboard umożliwia porównanie wyników dla trzech rozmiarów danych:
-    - **sample** – 5 000 hospitalizacji (szybki test),
-    - **medium** – 20 000 hospitalizacji (pośredni),
-    - **full** – 101 766 hospitalizacji (pełny zbiór).
+    Struktura PCA jest jakościowo zbliżona dla wszystkich trzech rozmiarów danych,
+    co potwierdza spójność wyników. Jednocześnie stabilność Jaccarda spada wraz
+    ze wzrostem zbioru (0.385 → 0.312), co sugeruje że w większych zbiorach
+    lokalne sąsiedztwa są bardziej zróżnicowane i wrażliwsze na decyzje
+    dotyczące preprocessingu.
     """)
