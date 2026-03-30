@@ -123,56 +123,67 @@ def run_pipeline(sample_size=None, status_callback=None):
         X_minmax = normalize_matrix(X, method="minmax")
         X_reduced_minmax = pca_pre.transform(X_minmax)
 
-        _, indices_minmax = compute_knn(
-            X_reduced_minmax,
-            n_neighbors=config.TOP_K_NEIGHBORS,
-            algorithm="ball_tree",
-            metric="euclidean"
-        )
-
-        idx = np.array(X.index)
-        neighbors_zscore = {idx[i]: idx[indices[i]].tolist() for i in range(len(indices))}
-        neighbors_minmax = {idx[i]: idx[indices_minmax[i]].tolist() for i in range(len(indices_minmax))}
-
         rng = np.random.default_rng(config.RANDOM_SEED)
-        query_n = min(100, len(neighbors_zscore))
-        query_ids = rng.choice(list(neighbors_zscore.keys()), size=query_n, replace=False)
-        stability = stability_jaccard(neighbors_zscore, neighbors_minmax, query_ids)
+        stability_rows = []
 
-        stability_df = pd.DataFrame([{
-            "porownanie": "normalizacja: zscore vs minmax (PCA 10D + euclidean)",
-            "top_k": config.TOP_K_NEIGHBORS,
-            "n_query": len(query_ids),
-            "jaccard_mean": stability
-        }])
+        for metric in config.METRICS:
+            _, idx_zscore = compute_knn(
+                X_reduced,
+                n_neighbors=config.TOP_K_NEIGHBORS,
+                algorithm="ball_tree",
+                metric=metric
+            )
+            _, idx_minmax = compute_knn(
+                X_reduced_minmax,
+                n_neighbors=config.TOP_K_NEIGHBORS,
+                algorithm="ball_tree",
+                metric=metric
+            )
+
+            idx_arr = np.array(X.index)
+            neigh_zscore = {idx_arr[i]: idx_arr[idx_zscore[i]].tolist() for i in range(len(idx_zscore))}
+            neigh_minmax = {idx_arr[i]: idx_arr[idx_minmax[i]].tolist() for i in range(len(idx_minmax))}
+
+            query_n = min(config.N_QUERY_PATIENTS, len(neigh_zscore))
+            query_ids = rng.choice(list(neigh_zscore.keys()), size=query_n, replace=False)
+            jac = stability_jaccard(neigh_zscore, neigh_minmax, query_ids)
+
+            stability_rows.append({
+                "porownanie": "zscore vs minmax",
+                "metryka": metric,
+                "top_k": config.TOP_K_NEIGHBORS,
+                "n_query": query_n,
+                "jaccard_mean": round(jac, 4)
+            })
+
+        indices = idx_zscore
+        stability = stability_rows[0]["jaccard_mean"]
+        stability_df = pd.DataFrame(stability_rows)
+
     else:
         stability = None
         stability_df = pd.DataFrame([{
-            "porownanie": "normalizacja: zscore vs minmax (PCA 10D + euclidean)",
+            "porownanie": "zscore vs minmax",
+            "metryka": m,
             "top_k": config.TOP_K_NEIGHBORS,
             "n_query": 0,
             "jaccard_mean": None
-        }])
+        } for m in config.METRICS])
 
     stability_df.to_csv(results_tables / "stability_jaccard.csv", index=False)
 
     # Zapis zbiorczej tabeli porównawczej
     comparison_path = Path("results/comparison_stability.csv")
-    new_row = pd.DataFrame([{
-        "zbior": suffix,
-        "n_rekordow": len(X),
-        "porownanie": "zscore vs minmax (PCA 10D + euclidean)",
-        "top_k": config.TOP_K_NEIGHBORS,
-        "n_query": len(query_ids) if sample_size is not None else 0,
-        "jaccard_mean": round(stability, 4) if sample_size is not None else None
-    }])
+    new_rows = stability_df.copy()
+    new_rows.insert(0, "zbior", suffix)
+    new_rows.insert(1, "n_rekordow", len(X))
 
     if comparison_path.exists():
         existing = pd.read_csv(comparison_path)
         existing = existing[existing["zbior"] != suffix]
-        combined = pd.concat([existing, new_row], ignore_index=True)
+        combined = pd.concat([existing, new_rows], ignore_index=True)
     else:
-        combined = new_row
+        combined = new_rows
 
     combined.to_csv(comparison_path, index=False)
 
