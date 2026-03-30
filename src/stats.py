@@ -17,13 +17,25 @@ def compute_input_stats(df):
         }
 
         if pd.api.types.is_numeric_dtype(series):
-
             stat.update({
-                "mean": series.mean(),
+                "mean": round(series.mean(), 4),
                 "median": series.median(),
                 "min": series.min(),
                 "max": series.max(),
-                "std": series.std()
+                "std": round(series.std(), 4),
+                "top_values": None
+            })
+        else:
+            # dla kolumn kategorycznych - top 3 najczęstsze wartości z liczebnością
+            top = series.value_counts().head(3)
+            top_str = ", ".join([f"{v}: {c}" for v, c in top.items()])
+            stat.update({
+                "mean": None,
+                "median": None,
+                "min": None,
+                "max": None,
+                "std": None,
+                "top_values": top_str
             })
 
         stats.append(stat)

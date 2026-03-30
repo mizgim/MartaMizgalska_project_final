@@ -197,11 +197,22 @@ if menu == "Terapia i populacja":
 
 if menu == "Stabilność":
     st.subheader("Stabilność struktury podobieństw")
+
     if stability_df is not None:
+        st.markdown("**Wyniki dla aktualnie wybranego zbioru:**")
         st.dataframe(stability_df, use_container_width=True)
         st.success("Współczynnik Jaccarda pokazuje, jak bardzo zmienia się lokalna struktura sąsiedztwa po zmianie sposobu normalizacji danych.")
     else:
         st.warning("Brak pliku stability_jaccard.csv")
+
+    st.markdown("---")
+    st.markdown("**Porównanie wszystkich zbiorów danych:**")
+    comparison_path = BASE / "results" / "comparison_stability.csv"
+    if comparison_path.exists():
+        comparison_df = pd.read_csv(comparison_path)
+        st.dataframe(comparison_df, use_container_width=True)
+    else:
+        st.warning("Brak tabeli porównawczej – uruchom pipeline dla sample i medium.")
 
     if loadings_path.exists():
         with st.expander("Tabela PCA loadings"):
@@ -214,8 +225,7 @@ if menu == "Dane wejściowe":
     else:
         st.warning("Brak pliku input_stats.csv")
 
-Oto gotowa sekcja Wnioski do wklejenia w app.py:
-pythonif menu == "Wnioski":
+if menu == "Wnioski":
     st.subheader("Najważniejsze wnioski z analizy")
 
     st.success("Projekt pokazuje, że podobieństwo hospitalizacji pacjentów z cukrzycą zależy zarówno od cech klinicznych, jak i od decyzji technicznych związanych z przetwarzaniem danych.")

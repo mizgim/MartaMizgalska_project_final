@@ -156,6 +156,26 @@ def run_pipeline(sample_size=None, status_callback=None):
 
     stability_df.to_csv(results_tables / "stability_jaccard.csv", index=False)
 
+    # Zapis zbiorczej tabeli porównawczej
+    comparison_path = Path("results/comparison_stability.csv")
+    new_row = pd.DataFrame([{
+        "zbior": suffix,
+        "n_rekordow": len(X),
+        "porownanie": "zscore vs minmax (PCA 10D + euclidean)",
+        "top_k": config.TOP_K_NEIGHBORS,
+        "n_query": len(query_ids) if sample_size is not None else 0,
+        "jaccard_mean": round(stability, 4) if sample_size is not None else None
+    }])
+
+    if comparison_path.exists():
+        existing = pd.read_csv(comparison_path)
+        existing = existing[existing["zbior"] != suffix]
+        combined = pd.concat([existing, new_row], ignore_index=True)
+    else:
+        combined = new_row
+
+    combined.to_csv(comparison_path, index=False)
+
     update("Zapisuję wyniki...", 95)
     print("Liczba hospitalizacji:", len(X))
     print("Liczba cech:", X.shape[1])
