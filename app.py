@@ -23,6 +23,7 @@ st.markdown(f"""
         background-image: url("data:image/png;base64,{img_base64}");
         background-size: cover;
         background-position: center;
+        border-right: 2px solid rgba(200, 150, 150, 0.4);
     }}
     [data-testid="stSidebar"]::before {{
         content: "";
@@ -124,39 +125,17 @@ if menu == "PCA":
 
         pca_df = pd.read_csv(pca_coords_path)
 
-        st.markdown("### Filtry")
-        c1, c2 = st.columns(2)
-        with c1:
-            readmitted_filter = st.multiselect(
-                "Readmitted",
-                options=sorted(pca_df["readmitted"].dropna().unique().tolist()),
-                default=sorted(pca_df["readmitted"].dropna().unique().tolist())
-            )
-        with c2:
-            insulin_filter = st.multiselect(
-                "Insulin",
-                options=sorted(pca_df["insulin"].dropna().unique().tolist()),
-                default=sorted(pca_df["insulin"].dropna().unique().tolist())
-            )
-
         color_by = st.radio(
             "Koloruj według",
             ["insulin", "readmitted"],
             horizontal=True
         )
 
-        filtered_df = pca_df[
-            pca_df["readmitted"].isin(readmitted_filter) &
-            pca_df["insulin"].isin(insulin_filter)
-        ]
-
-        if len(filtered_df) > 5000:
-            display_df = filtered_df.sample(n=5000, random_state=42)
-            st.caption(f"Wyświetlono 5000 z {len(filtered_df)} punktów (próbka losowa)")
+        if len(pca_df) > 5000:
+            display_df = pca_df.sample(n=5000, random_state=42)
+            st.caption(f"Wyświetlono 5000 z {len(pca_df)} punktów (próbka losowa)")
         else:
-            display_df = filtered_df
-
-        st.markdown(f"**Liczba punktów po filtrowaniu:** {len(filtered_df)}")
+            display_df = pca_df
 
         fig = px.scatter(
             display_df,
@@ -179,21 +158,6 @@ if menu == "PCA":
 
     else:
         st.warning("Brak pliku pca_coords.csv – uruchom pipeline.")
-
-    st.markdown("---")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("**PCA pokolorowane readmission**")
-        if pca_plot.exists():
-            st.image(str(pca_plot), use_container_width=True)
-        else:
-            st.warning("Brak pliku pca_plot.png")
-    with c2:
-        st.markdown("**PCA pokolorowane insulinoterapią**")
-        if pca_insulin.exists():
-            st.image(str(pca_insulin), use_container_width=True)
-        else:
-            st.warning("Brak pliku pca_insulin.png")
 
     st.markdown("---")
     st.markdown("**Najważniejsze zmienne w PCA**")
