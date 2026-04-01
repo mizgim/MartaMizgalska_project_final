@@ -16,7 +16,7 @@ def encode_age(age_value):
     return np.nan
 
 
-def build_feature_matrix(df, aggregation="mean"):
+def build_feature_matrix(df):
     data = df.copy()
 
     # Kodowanie age
@@ -68,7 +68,7 @@ def build_feature_matrix(df, aggregation="mean"):
     for col in medication_columns:
         data[col] = data[col].map(med_map)
 
-    # encoding dla race
+    # Encoding dla race
     race_dummies = pd.get_dummies(data["race"], prefix="race")
 
     # Kolumny liczbowe

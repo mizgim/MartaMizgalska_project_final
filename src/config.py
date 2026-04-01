@@ -1,11 +1,6 @@
-N_PATIENTS = 5000
-VISITS_MIN = 5
-VISITS_MAX = 25
-KINDS = ["BP_SYS", "BP_DIA", "HR", "TEMP", "BMI"]
-MISSING_RATE = 0.05
-AGGREGATIONS = ["mean", "median"]
+
 NORMALIZATIONS = ["minmax", "zscore"]
-METRICS = ["euclidean", "cosine"]
+METRICS = ["euclidean", "manhattan"]
 TOP_K_NEIGHBORS = 10
-N_QUERY_PATIENTS = 50
+N_QUERY_PATIENTS = 100
 RANDOM_SEED = 42

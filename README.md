@@ -2,10 +2,13 @@
 
 ## Opis danych wejściowych
 - **Źródło:** Diabetes Hospital Dataset (UCI)
+- **Link:** https://archive.ics.uci.edu/dataset/296/diabetes+130-us+hospitals+for+years+1999-2008
 - **Format:** CSV → SQLite
 - **Rozmiar:** ~101 766 rekordów hospitalizacji
 - **Cechy:** dane kliniczne i farmakoterapeutyczne (czas hospitalizacji, liczba leków, liczba diagnoz, insulinoterapia i in.)
 - **Typy:** dane mieszane – liczbowe i kategoryczne
+
+> Pobierz plik `diabetic_data.csv` i umieść go w katalogu `data/raw/`.
 
 ## Pipeline przetwarzania
 1. **Wczytanie danych** – import CSV do bazy SQLite (`generate_db.py`)
@@ -24,20 +27,20 @@
 | `N_QUERY_PATIENTS` | 100 | liczba pacjentów do oceny stabilności |
 | `RANDOM_SEED` | 42 | ziarno losowości |
 | `NORMALIZATIONS` | z-score / min-max | porównywane dwa warianty normalizacji |
-| `METRICS` | euclidean / cosine | porównywane dwie metryki odległości |
+| `METRICS` | euclidean / manhattan | porównywane dwie metryki odległości |
 | PCA przed kNN | 10 komponentów | redukcja wymiarów |
 | `sample_size` | 5000 / 20000 / None | rozmiar zbioru danych |
 
 ## Analiza wrażliwości
 Porównano dwa warianty normalizacji (z-score vs min-max) przy użyciu współczynnika Jaccarda,
-dla dwóch metryk odległości (euclidean i cosine):
+dla dwóch metryk odległości (euclidean i cosin):
 
 | zbiór | n rekordów | metryka | Jaccard |
 |---|---|---|---|
 | sample | 5 000 | euclidean | 0.385 |
 | sample | 5 000 | cosine | TBD |
 | medium | 20 000 | euclidean | 0.312 |
-| medium | 20 000 | cosine | TBD |
+| medium | 20 000 | manhattan | TBD |
 
 Pełna tabela porównawcza: `results/comparison_stability.csv`
 
@@ -60,7 +63,10 @@ pip install -r requirements.txt
 Projekt uruchamiany jest z poziomu PyCharm.
 
 1. Otwórz projekt w PyCharm
-2. Uruchom `main.py` z odpowiednim parametrem `sample_size` (5000 / 20000 / None)
+2. Uruchom `main.py` z odpowiednim parametrem `--sample` w konfiguracji uruchomienia:
+   - `--sample 5000` – próbka 5 000 rekordów
+   - `--sample 20000` – próbka 20 000 rekordów
+   - brak parametru – pełny zbiór
 3. Wyniki pojawią się w katalogu `results/`
 
 ### Uruchomienie dashboardu
@@ -71,7 +77,7 @@ streamlit run app.py
 ## Możliwe rozszerzenia parametrów
 W `config.py` zdefiniowano parametry gotowe do dalszego rozszerzenia:
 - `NORMALIZATIONS` – porównanie większej liczby metod normalizacji
-- `METRICS` – porównanie metryk odległości (euclidean vs cosine)
+- `METRICS` – porównanie metryk odległości (euclidean vs manhattan)
 - `AGGREGATIONS` – różne metody agregacji cech
 
 ## Struktura repozytorium

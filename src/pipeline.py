@@ -12,8 +12,7 @@ from .normalize import normalize_matrix
 from .similarity import compute_knn, knn_to_dataframe
 from .pca_analysis import compute_pca_2d
 from .stability import stability_jaccard
-from .plots import plot_pca, plot_pca_insulin, plot_pca_loadings
-from .plots import plot_medication_usage, plot_age_vs_medications, plot_age_vs_insulin
+from .plots import plot_pca, plot_pca_insulin, plot_pca_loadings, plot_medication_usage, plot_age_vs_medications, plot_age_vs_insulin
 from .additional_analysis import medication_usage, age_vs_medications, age_vs_insulin
 
 
@@ -127,16 +126,18 @@ def run_pipeline(sample_size=None, status_callback=None):
         stability_rows = []
 
         for metric in config.METRICS:
+            algorithm = "ball_tree" if metric != "cosine" else "brute"
+
             _, idx_zscore = compute_knn(
                 X_reduced,
                 n_neighbors=config.TOP_K_NEIGHBORS,
-                algorithm="ball_tree",
+                algorithm=algorithm,
                 metric=metric
             )
             _, idx_minmax = compute_knn(
                 X_reduced_minmax,
                 n_neighbors=config.TOP_K_NEIGHBORS,
-                algorithm="ball_tree",
+                algorithm=algorithm,
                 metric=metric
             )
 
