@@ -10,6 +10,7 @@ st.set_page_config(
 )
 
 BASE = Path(__file__).resolve().parent
+CSV_PATH = Path("/Users/martamizgalska/Desktop/projekt roczny/project-db3-patients/diabetic_data.csv")
 
 def get_base64_image(path):
     with open(path, "rb") as f:
@@ -39,6 +40,15 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
+# Podgląd bazy danych w sidebarze
+st.sidebar.markdown("Baza danych")
+db_view = st.sidebar.radio(
+    "",
+    ["Analiza danych", "Podgląd"],
+    key="db_radio",
+    label_visibility="collapsed"
+)
+
 dataset_type = st.sidebar.radio(
     "Wybierz dane",
     ["full", "medium", "sample"],
@@ -58,6 +68,17 @@ st.title("Analiza hospitalizacji diabetologicznych")
 st.caption("Interaktywny dashboard projektu rocznego — analiza podobieństwa hospitalizacji pacjentów z cukrzycą")
 
 st.info(f"Aktualnie wybrany zbiór: {dataset_type}")
+
+# Podgląd CSV po kliknięciu w sidebarze
+if db_view == "Podgląd":
+    st.subheader("Podgląd analizowanej bazy danych")
+    if CSV_PATH.exists():
+        preview_df = pd.read_csv(CSV_PATH, nrows=25)
+        st.caption("Pierwsze 25 wierszy z pliku diabetic_data.csv")
+        st.dataframe(preview_df, use_container_width=True)
+    else:
+        st.warning("Brak pliku diabetic_data.csv")
+    st.stop()
 
 if st.button("Uruchom pipeline"):
     progress = st.progress(0, text="Inicjalizacja...")
@@ -88,6 +109,14 @@ input_stats = pd.read_csv(input_stats_path) if input_stats_path.exists() else No
 stability_df = pd.read_csv(stability_path) if stability_path.exists() else None
 
 if menu == "Przegląd":
+    st.markdown("""
+    ### Cel projektu
+    Projekt analizuje podobieństwo hospitalizacji pacjentów z cukrzycą na podstawie cech klinicznych
+    i farmakoterapii. Badana jest także stabilność struktury podobieństw przy różnych metodach
+    przetwarzania danych.
+    """)
+
+    st.markdown("---")
     st.subheader("Podstawowe informacje")
     col1, col2, col3 = st.columns(3)
 
@@ -105,19 +134,9 @@ if menu == "Przegląd":
     else:
         col3.metric("Średnia stabilność (Jaccard)", "brak")
 
-    st.markdown("---")
-    st.markdown("""
-    ### Cel projektu
-    Projekt analizuje podobieństwo hospitalizacji pacjentów z cukrzycą na podstawie cech klinicznych
-    i farmakoterapii. Badana jest także stabilność struktury podobieństw przy różnych metodach
-    przetwarzania danych.
-    """)
-
 if menu == "PCA":
     st.subheader("Analiza PCA")
     pca_coords_path = TABLES / "pca_coords.csv"
-    pca_plot = PLOTS / "pca_plot.png"
-    pca_insulin = PLOTS / "pca_insulin.png"
     pca_loadings = PLOTS / "pca_loadings.png"
 
     if pca_coords_path.exists():
